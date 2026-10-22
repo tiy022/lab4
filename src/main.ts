@@ -80,10 +80,14 @@ class App implements ScreenSwitcher {
 				this.gameController.startGame();
 				break;
 
+			// case "result":
+			// 	// Show results with the final score
+			// 	this.resultsController.showResults(screen.score);
+			// 	break;
+
 			case "result":
-				// Show results with the final score
-				this.resultsController.showResults(screen.score);
-				break;
+    			this.resultsController.showResultsFromServer(screen.score);
+    			break;
 		}
 	}
 }

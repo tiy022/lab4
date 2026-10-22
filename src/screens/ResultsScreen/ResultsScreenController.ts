@@ -26,7 +26,8 @@ export class ResultsScreenController extends ScreenController {
 		this.view = new ResultsScreenView(() => this.handlePlayAgainClick());
 
 		// TODO: Task 4 - Initialize game over sound audio
-		this.gameOverSound = new Audio(); // Placeholder
+		// this.gameOverSound = new Audio(); // Placeholder
+		this.gameOverSound = new Audio("/gameover.mp3");
 	}
 
 	/**
@@ -51,6 +52,8 @@ export class ResultsScreenController extends ScreenController {
 		this.view.show();
 
 		// TODO: Task 4 - Play the game over sound
+		this.gameOverSound.currentTime = 0;
+		this.gameOverSound.play();
 	}
 
 	/**
@@ -58,7 +61,12 @@ export class ResultsScreenController extends ScreenController {
 	 */
 	private loadLeaderboard(): LeaderboardEntry[] {
 		// TODO: Task 5 - Load leaderboard from localStorage
-		return []; // Placeholder
+		// return []; // Placeholder
+		const savedData = localStorage.getItem(LEADERBOARD_KEY);
+    	if (savedData === null) {
+        	return [];
+    	}
+    	return JSON.parse(savedData) as LeaderboardEntry[];
 	}
 
 	/**
@@ -66,7 +74,54 @@ export class ResultsScreenController extends ScreenController {
 	 */
 	private saveLeaderboard(entries: LeaderboardEntry[]): void {
 		// TODO: Task 5 - Save leaderboard to localStorage
+		const jsonString = JSON.stringify(entries);
+    	localStorage.setItem(LEADERBOARD_KEY, jsonString);
 	}
+
+	private async loadLeaderboardFromServer(): Promise<LeaderboardEntry[]> {
+    const response = await fetch("/api/leaderboard");
+    if (!response.ok) {
+        throw new Error("Unable to load leaderboard");
+    }
+    return (await response.json()) as LeaderboardEntry[];
+	}
+
+	private async saveLeaderboardToServer(entries: LeaderboardEntry[]): Promise<void> {
+    const response = await fetch("/api/leaderboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entries),
+    });
+    if (!response.ok) {
+        throw new Error("Unable to save leaderboard");
+    }
+	}
+
+	async showResultsFromServer(finalScore: number): Promise<void> {
+    try {
+        this.model.setFinalScore(finalScore);
+        this.view.updateFinalScore(finalScore);
+
+        const entries = await this.loadLeaderboardFromServer();
+        entries.push({
+            score: finalScore,
+            timestamp: new Date().toLocaleString(),
+        });
+        entries.sort((a, b) => b.score - a.score);
+        const top5 = entries.slice(0, MAX_LEADERBOARD_ENTRIES);
+
+        await this.saveLeaderboardToServer(top5);
+        this.model.setLeaderboard(top5);
+        this.view.updateLeaderboard(top5);
+
+        this.view.show();
+
+        this.gameOverSound.currentTime = 0;
+        this.gameOverSound.play();
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 	/**
 	 * Handle play again button click
