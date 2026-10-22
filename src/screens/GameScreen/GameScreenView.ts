@@ -64,8 +64,8 @@ export class GameScreenView implements View {
 		// this.group.add(this.lemonImage);
 
 		Konva.Image.fromURL("/lemon.png", (lemon) => {
-		lemon.width(100);
-    	lemon.height(100);
+		lemon.width(700);
+    	lemon.height(700);
     	lemon.x(STAGE_WIDTH / 2);
     	lemon.y(STAGE_HEIGHT / 2);
     	lemon.offsetX(lemon.width() / 2);
